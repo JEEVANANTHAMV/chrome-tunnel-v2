@@ -21,9 +21,9 @@ npm install
 ```
 
 ### 2. Set up FRP
-Download the `frpc` binary for your current platform:
+Download the `frpc` binaries for all platforms:
 ```bash
-npm run setup:frp
+npm run download:frp
 ```
 
 ### 3. Development

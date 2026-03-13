@@ -3,7 +3,12 @@ node_modules/
 frontend/node_modules/
 
 # Build outputs
-dist/
+# dist/
+dist/*-unpacked/
+dist/win-unpacked/
+dist/linux-unpacked/
+dist/mac/
+dist/mac-arm64/
 out/
 frontend/out/
 frontend/.next/

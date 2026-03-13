@@ -117,17 +117,36 @@ ${customDomain ? `custom_domains = ${customDomain}` : `remote_port = ${remotePor
 
   // Platform-specific frpc binary path
   let frpcPath;
-  const isAppImage = process.env.APPIMAGE !== undefined;
-  const binDir = isAppImage
-    ? path.join(process.resourcesPath, 'bin')
-    : path.join(__dirname, process.platform === 'win32' ? '..' : 'bin');
+  const isProd = !isDev;
+  
+  let binDir;
+  if (isDev) {
+    binDir = path.join(__dirname, 'bin');
+  } else {
+    // In production, binaries are in the resources folder
+    binDir = path.join(process.resourcesPath, 'bin');
+    
+    // Fallback for some linux distributions or custom builds
+    if (!fs.existsSync(binDir)) {
+      binDir = path.join(__dirname, '..', '..', 'bin');
+    }
+  }
 
   if (process.platform === 'win32') {
     frpcPath = path.join(binDir, 'frpc.exe');
   } else if (process.platform === 'darwin') {
-    // Check for ARM64 vs x64 on macOS
+    // Try to find the correct architecture binary
     const arch = process.arch;
-    frpcPath = path.join(binDir, arch === 'arm64' ? 'frpc-darwin-arm64' : 'frpc-darwin');
+    const armPath = path.join(binDir, 'frpc-darwin-arm64');
+    const x64Path = path.join(binDir, 'frpc-darwin');
+    
+    if (arch === 'arm64' && fs.existsSync(armPath)) {
+      frpcPath = armPath;
+    } else if (fs.existsSync(x64Path)) {
+      frpcPath = x64Path;
+    } else {
+      frpcPath = path.join(binDir, 'frpc'); // Generic fallback
+    }
   } else {
     frpcPath = path.join(binDir, 'frpc');
   }
