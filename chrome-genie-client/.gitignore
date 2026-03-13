@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+out/
+frontend/out/
+frontend/.next/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.pak
+*.so
+*.bin
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+temp-frp/
+*.tmp
+*.temp
+
+# Electron builder cache
+.electron-builder/
+
+# Iconset (intermediate file)
+*.iconset/
+
+# Build artifacts
+builder-debug.yml
+builder-effective-config.yaml

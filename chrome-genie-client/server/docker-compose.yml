@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  frps:
+    image: fatedier/frp
+    container_name: frp-server
+    restart: always
+    volumes:
+      - ./frps.ini:/etc/frp/frps.ini
+    ports:
+      - "7000:7000"
+      - "80:80"
+      - "443:443"
+      - "7500:7500"

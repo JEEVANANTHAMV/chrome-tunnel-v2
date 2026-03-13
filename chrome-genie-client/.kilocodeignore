@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+out/
+frontend/out/
+frontend/.next/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+temp-frp/
+*.tmp
+*.temp
+
+# Git
+.git/
+.gitignore
