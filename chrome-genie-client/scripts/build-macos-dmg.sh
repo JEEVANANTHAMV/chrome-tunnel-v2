@@ -20,6 +20,8 @@ cp ${DIST_DIR}/chrome-genie-client-mac_universal ${APP_BUNDLE}/Contents/MacOS/${
 # Copy resources
 cp -r ${DIST_DIR}/resources.neu ${APP_BUNDLE}/Contents/MacOS/
 cp -r ${DIST_DIR}/extensions ${APP_BUNDLE}/Contents/MacOS/
+mkdir -p ${APP_BUNDLE}/Contents/MacOS/bin
+cp -r bin/* ${APP_BUNDLE}/Contents/MacOS/bin/
 
 # Copy icon
 cp resources/assets/icon.icns ${APP_BUNDLE}/Contents/Resources/

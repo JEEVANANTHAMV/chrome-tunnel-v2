@@ -21,6 +21,8 @@ cp ${DIST_DIR}/${APP_NAME}-linux_x64 ${DEB_DIR}/usr/bin/${APP_NAME}
 # Copy resources
 cp -r ${DIST_DIR}/resources.neu ${DEB_DIR}/usr/bin/
 cp -r ${DIST_DIR}/extensions ${DEB_DIR}/usr/bin/
+mkdir -p ${DEB_DIR}/usr/bin/bin
+cp -r bin/* ${DEB_DIR}/usr/bin/bin/
 
 # Copy icon
 cp resources/assets/icon_512.png ${DEB_DIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png

@@ -34,6 +34,8 @@ cp ${DIST_DIR}/${APP_NAME}-linux_x64 ${APPDIR}/usr/bin/${APP_NAME}
 # Copy resources
 cp -r ${DIST_DIR}/resources.neu ${APPDIR}/usr/bin/
 cp -r ${DIST_DIR}/extensions ${APPDIR}/usr/bin/
+mkdir -p ${APPDIR}/usr/bin/bin
+cp -r bin/* ${APPDIR}/usr/bin/bin/
 
 # Copy icon to multiple locations
 cp resources/assets/icon_512.png ${APPDIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png

@@ -23,15 +23,25 @@ function initChromeGenieAPI() {
         console.log(`Found available port: ${finalPort}`);
 
         let envCmd = '';
+        const commonPaths = 'export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.npm-global/bin; ';
+        
         if (window.NL_OS === 'Windows') {
           envCmd = `set STAGEHAND_ENV=LOCAL&& set MODEL_NAME=${config.modelName}&& set MODEL_BASE_URL=${config.baseUrl}&& set OPENAI_API_KEY=${config.apiKey}&& `;
         } else {
-          envCmd = `STAGEHAND_ENV=LOCAL MODEL_NAME=${config.modelName} MODEL_BASE_URL=${config.baseUrl} OPENAI_API_KEY=${config.apiKey} `;
+          envCmd = `${commonPaths} STAGEHAND_ENV=LOCAL MODEL_NAME=${config.modelName} MODEL_BASE_URL=${config.baseUrl} OPENAI_API_KEY=${config.apiKey} `;
         }
         
         const cmd = `${envCmd}npx innosynth-mcp --experimental --port ${finalPort} --host 0.0.0.0`;
         const res = await Neutralino.os.spawnProcess(cmd);
         mcpPid = res.id;
+
+        // Add error detection for the spawned process
+        Neutralino.events.on('spawnedProcess', (evt) => {
+          if (evt.detail.id === mcpPid && evt.detail.action === 'stdErr' && evt.detail.data.includes('command not found')) {
+            console.error('[MCP] ERROR: Node.js/npx not found. Please install Node.js from https://nodejs.org to use the MCP server.');
+          }
+        });
+
         return { success: true, port: finalPort };
       } catch (e) {
         return { success: false, error: e.message };

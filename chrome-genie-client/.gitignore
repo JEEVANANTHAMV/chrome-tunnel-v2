@@ -63,3 +63,5 @@ bin/frpc
 bin/frpc-*
 bin/frpc.exe
 appimagetool
+
+chrome-genie-client/bin/

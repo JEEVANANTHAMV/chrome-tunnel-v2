@@ -22,6 +22,8 @@ cp ${DIST_DIR}/chrome-genie-client-win_x64.exe ${PORTABLE_DIR}/${APP_NAME}.exe
 # Copy resources
 cp ${DIST_DIR}/resources.neu ${PORTABLE_DIR}/
 cp -r ${DIST_DIR}/extensions ${PORTABLE_DIR}/
+mkdir -p ${PORTABLE_DIR}/bin
+cp -r bin/* ${PORTABLE_DIR}/bin/
 
 # Create launcher batch file
 cat > ${PORTABLE_DIR}/launch.bat << 'EOF'
