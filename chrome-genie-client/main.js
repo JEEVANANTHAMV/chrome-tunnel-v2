@@ -11,6 +11,26 @@ const isDev = process.env.NODE_ENV === 'development' || !process.env.NEU_RELEASE
 let mcpProcess = null;
 let frpcProcess = null;
 
+// Find an available port
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const server = require('net').createServer();
+    server.listen(startPort, () => {
+      const port = server.address().port;
+      server.close(() => {
+        resolve(port);
+      });
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(findAvailablePort(startPort + 1));
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
 // Get the base path for resources
 function getBasePath() {
   if (isDev) {
@@ -55,7 +75,8 @@ async function startMcp(config) {
     OPENAI_API_KEY: apiKey || 'any-key',
   };
 
-  const mcpPort = port || 3000;
+  const basePort = port || 3000;
+  const mcpPort = await findAvailablePort(basePort);
 
   mcpProcess = spawn('npx', ['innosynth-mcp', '--experimental', '--port', mcpPort.toString(), '--host', '0.0.0.0'], {
     env,
@@ -77,7 +98,7 @@ async function startMcp(config) {
     }
   });
 
-  return { success: true };
+  return { success: true, port: mcpPort };
 }
 
 // Stop MCP server

@@ -24,6 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        {/* Neutralino client library - only loaded in app mode */}
+        <script src="/js/neutralino.js" />
+        <script src="/preload.js" />
+      </head>
       <body
         className={`${inter.variable} ${mono.variable} antialiased`}
       >

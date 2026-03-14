@@ -3,11 +3,12 @@
   "applicationId": "js.neutralino.chromegenie",
   "version": "1.0.0",
   "defaultMode": "window",
-  "port": 8080,
+  "port": 0,
   "documentRoot": "/resources/",
   "url": "/",
   "enableServer": true,
   "enableNativeAPI": true,
+  "enableExtensions": true,
   "tokenSecurity": "one-time",
   "logging": {
     "enabled": true,
@@ -21,6 +22,7 @@
     "filesystem.*",
     "http.*"
   ],
+  "extensions": [],
   "modes": {
     "window": {
       "title": "ChromeGenie Dashboard",
@@ -31,13 +33,14 @@
       "center": true,
       "fullScreen": false,
       "alwaysOnTop": false,
-      "icon": "/resources/icons/icon.png",
+      "icon": "/assets/icon.png",
       "enableInspector": true,
       "borderless": false,
       "maximize": false,
       "hidden": false,
       "resizable": true,
-      "exitProcessOnClose": false
+      "exitProcessOnClose": false,
+      "preloadScript": "/resources/preload.js"
     }
   },
   "cli": {

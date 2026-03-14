@@ -11,6 +11,26 @@ const isDev = process.env.NODE_ENV === 'development' || !process.env.NEU_RELEASE
 let mcpProcess = null;
 let frpcProcess = null;
 
+// Find an available port
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const server = require('net').createServer();
+    server.listen(startPort, () => {
+      const port = server.address().port;
+      server.close(() => {
+        resolve(port);
+      });
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(findAvailablePort(startPort + 1));
+      } else {
+        reject(err);
+      }
+    });
+  });
+}
+
 // Get the base path for resources
 function getBasePath() {
   if (isDev) {
@@ -37,7 +57,8 @@ async function startMcp(config) {
     OPENAI_API_KEY: apiKey || 'any-key',
   };
 
-  const mcpPort = port || 3000;
+  const basePort = port || 3000;
+  const mcpPort = await findAvailablePort(basePort);
 
   mcpProcess = spawn('npx', ['innosynth-mcp', '--experimental', '--port', mcpPort.toString(), '--host', '0.0.0.0'], {
     env,
@@ -47,19 +68,19 @@ async function startMcp(config) {
   mcpProcess.stdout.on('data', (data) => {
     console.log(`MCP STDOUT: ${data}`);
     // Emit event to renderer
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('mcp-log', data.toString());
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('mcp-log', data.toString());
     }
   });
 
   mcpProcess.stderr.on('data', (data) => {
     console.error(`MCP STDERR: ${data}`);
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('mcp-log', `ERROR: ${data.toString()}`);
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('mcp-log', `ERROR: ${data.toString()}`);
     }
   });
 
-  return { success: true };
+  return { success: true, port: mcpPort };
 }
 
 // Stop MCP server
@@ -134,8 +155,8 @@ ${customDomain ? `custom_domains = ${customDomain}` : `remote_port = ${remotePor
   // Check if frpc exists
   if (!fs.existsSync(frpcPath)) {
     console.error(`frpc binary not found at: ${frpcPath}`);
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('frpc-log', `ERROR: frpc binary not found at ${frpcPath}\n`);
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('frpc-log', `ERROR: frpc binary not found at ${frpcPath}\n`);
     }
     return { success: false, error: 'frpc binary not found' };
   }
@@ -154,21 +175,21 @@ ${customDomain ? `custom_domains = ${customDomain}` : `remote_port = ${remotePor
   });
 
   frpcProcess.stdout.on('data', (data) => {
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('frpc-log', data.toString());
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('frpc-log', data.toString());
     }
   });
 
   frpcProcess.stderr.on('data', (data) => {
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('frpc-log', `ERROR: ${data.toString()}`);
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('frpc-log', `ERROR: ${data.toString()}`);
     }
   });
 
   frpcProcess.on('error', (err) => {
     console.error('Failed to start frpc:', err);
-    if (typeof neu !== 'undefined' && neu.Event) {
-      neu.Event.emit('frpc-log', `ERROR: Failed to start frpc - ${err.message}\n`);
+    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
+      Neutralino.Event.emit('frpc-log', `ERROR: Failed to start frpc - ${err.message}\n`);
     }
   });
 

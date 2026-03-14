@@ -14,7 +14,8 @@ import {
   Activity,
   Shield,
   Zap,
-  Server
+  Server,
+  AlertTriangle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,7 +28,15 @@ function cn(...inputs: ClassValue[]) {
 declare global {
   interface Window {
     electronAPI: {
-      startMcp: (config: any) => Promise<{ success: boolean }>;
+      startMcp: (config: any) => Promise<{ success: boolean, port?: number }>;
+      stopMcp: () => Promise<{ success: boolean }>;
+      startFrpc: (config: any) => Promise<{ success: boolean }>;
+      stopFrpc: () => Promise<{ success: boolean }>;
+      onMcpLog: (callback: (log: string) => void) => void;
+      onFrpcLog: (callback: (log: string) => void) => void;
+    };
+    chromeGenie: {
+      startMcp: (config: any) => Promise<{ success: boolean, port?: number }>;
       stopMcp: () => Promise<{ success: boolean }>;
       startFrpc: (config: any) => Promise<{ success: boolean }>;
       stopFrpc: () => Promise<{ success: boolean }>;
@@ -44,26 +53,31 @@ export default function Dashboard() {
   const [apiKey, setApiKey] = useState('any-key');
   const [mcpPort, setMcpPort] = useState('3000');
   
-  const [frpServer, setFrpServer] = useState('172.174.244.221');
-  const [frpPort, setFrpPort] = useState('7000');
-  const [frpToken, setFrpToken] = useState('mysecrettoken');
-  const [remotePort, setRemotePort] = useState('6001');
-  const [customDomain, setCustomDomain] = useState('');
+  // Auto-generated FRP Tunnel Settings
+  const HARDCODED_FRP_SERVER = '172.174.244.221';
+  const HARDCODED_FRP_PORT = '7000';
+  const HARDCODED_FRP_TOKEN = 'mysecrettoken';
+  const [publicUrl, setPublicUrl] = useState('');
   
   const [mcpStatus, setMcpStatus] = useState('stopped'); // stopped, running, error
   const [frpcStatus, setFrpcStatus] = useState('stopped');
+  const [isNativeMode, setIsNativeMode] = useState(false);
   
   const [logs, setLogs] = useState<{id: string, type: 'MCP' | 'FRP', content: string, time: string}[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.electronAPI) {
-      window.electronAPI.onMcpLog((log) => {
-        addLog('MCP', log);
-      });
-      window.electronAPI.onFrpcLog((log) => {
-        addLog('FRP', log);
-      });
+    if (typeof window !== 'undefined') {
+      const hasNativeAPI = !!(window.electronAPI || window.chromeGenie);
+      setIsNativeMode(hasNativeAPI);
+      if (hasNativeAPI && window.electronAPI) {
+        window.electronAPI.onMcpLog((log) => {
+          addLog('MCP', log);
+        });
+        window.electronAPI.onFrpcLog((log) => {
+          addLog('FRP', log);
+        });
+      }
     }
   }, []);
 
@@ -79,9 +93,15 @@ export default function Dashboard() {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  const startMcp = async () => {
+  const startMcpAndTunnel = async () => {
     setMcpStatus('running');
     addLog('MCP', 'Initializing server with ' + modelProvider + '...');
+    if (!window.electronAPI) {
+      setMcpStatus('error');
+      addLog('MCP', 'ERROR: Native API not available - please run the app using "npm run dev" or build and run the desktop application');
+      addLog('MCP', 'HINT: Run "npm run dev" from the project root to start the full development environment');
+      return;
+    }
     try {
       const res = await window.electronAPI.startMcp({
         modelProvider,
@@ -90,48 +110,57 @@ export default function Dashboard() {
         apiKey,
         port: parseInt(mcpPort),
       });
+      
+      let finalPort = mcpPort;
+      if (res.success && res.port) {
+        finalPort = res.port.toString();
+        setMcpPort(finalPort);
+      }
+
       if (!res.success) {
         setMcpStatus('error');
         addLog('MCP', 'ERROR: Failed to start process');
+        return;
       }
+
+      // Automatically Start Tunnel
+      setFrpcStatus('running');
+      addLog('FRP', 'Establishing auto-tunnel to ' + HARDCODED_FRP_SERVER + '...');
+      
+      const generatedDomain = `agent-${Math.random().toString(36).substring(2, 8)}.innosynth.org`;
+      setPublicUrl(`http://${generatedDomain}`);
+
+      const frpRes = await window.electronAPI.startFrpc({
+        serverAddr: HARDCODED_FRP_SERVER,
+        serverPort: HARDCODED_FRP_PORT,
+        token: HARDCODED_FRP_TOKEN,
+        localPort: finalPort,
+        customDomain: generatedDomain,
+      });
+
+      if (!frpRes.success) {
+        setFrpcStatus('error');
+        addLog('FRP', 'ERROR: Tunnel failed to connect');
+      }
+
     } catch (err) {
       setMcpStatus('error');
+      setFrpcStatus('error');
       addLog('MCP', 'ERROR: ' + (err as Error).message);
     }
   };
 
-  const stopMcp = async () => {
-    await window.electronAPI.stopMcp();
-    setMcpStatus('stopped');
-    addLog('MCP', 'Server stopped.');
-  };
-
-  const startFrpc = async () => {
-    setFrpcStatus('running');
-    addLog('FRP', 'Connecting to ' + frpServer + '...');
-    try {
-      const res = await window.electronAPI.startFrpc({
-        serverAddr: frpServer,
-        serverPort: frpPort,
-        token: frpToken,
-        localPort: mcpPort,
-        remotePort: remotePort,
-        customDomain: customDomain,
-      });
-      if (!res.success) {
-        setFrpcStatus('error');
-        addLog('FRP', 'ERROR: Tunnel failed to connect');
-      }
-    } catch (err) {
-      setFrpcStatus('error');
-      addLog('FRP', 'ERROR: ' + (err as Error).message);
+  const stopMcpAndTunnel = async () => {
+    if (!window.electronAPI) {
+      addLog('MCP', 'ERROR: Native API not available - please run the app using "npm run dev"');
+      return;
     }
-  };
-
-  const stopFrpc = async () => {
+    await window.electronAPI.stopMcp();
     await window.electronAPI.stopFrpc();
+    setMcpStatus('stopped');
     setFrpcStatus('stopped');
-    addLog('FRP', 'Tunnel disconnected.');
+    setPublicUrl('');
+    addLog('MCP', 'Server and tunnel stopped.');
   };
 
   return (
@@ -151,11 +180,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <span className={cn("status-dot", mcpStatus === 'running' ? 'active' : 'inactive')} />
-              <span className="text-xs font-semibold opacity-80">MCP</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <span className={cn("status-dot", frpcStatus === 'running' ? 'active' : 'inactive')} />
-              <span className="text-xs font-semibold opacity-80">TUNNEL</span>
+              <span className="text-xs font-semibold opacity-80">MCP / TUNNEL</span>
             </div>
           </div>
           <button className="p-2 rounded-full hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
@@ -163,6 +188,18 @@ export default function Dashboard() {
           </button>
         </div>
       </header>
+
+      {/* Browser Mode Warning Banner */}
+      {!isNativeMode && (
+        <div className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/30 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span className="text-xs text-amber-500 font-medium">
+              Running in browser mode - Native features unavailable. Run <code className="bg-amber-500/20 px-1.5 py-0.5 rounded">npm run dev</code> from project root for full functionality.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Connection Indicator Bar */}
       <div className="px-6 py-3 bg-purple-500/5 border-b border-white/5 flex items-center justify-between mb-2">
@@ -177,11 +214,7 @@ export default function Dashboard() {
             <div className={cn("w-2 h-2 rounded-full", frpcStatus === 'running' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-white/20')} />
             <span className="text-xs font-medium opacity-60">Public:</span>
             <span className="text-sm font-mono text-purple-400 font-bold">
-              {customDomain 
-                ? `http://${customDomain}/sse` 
-                : frpServer 
-                  ? `http://${frpServer}:${remotePort}/sse`
-                  : 'Tunnel not configured'}
+              {publicUrl ? publicUrl : 'Tunnel not configured'}
             </span>
           </div>
         </div>
@@ -221,13 +254,14 @@ export default function Dashboard() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label>Port</label>
+                  <label>Preferred Port</label>
                   <input 
                     type="number" 
                     value={mcpPort}
                     onChange={(e) => setMcpPort(e.target.value)}
                     className="w-full text-sm"
                   />
+                  <p className="text-[10px] text-white/40 mt-1">If in use, an available port is auto-selected.</p>
                 </div>
               </div>
 
@@ -271,95 +305,14 @@ export default function Dashboard() {
 
               <div className="pt-2">
                 {mcpStatus === 'running' ? (
-                  <button onClick={stopMcp} className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group">
+                  <button onClick={stopMcpAndTunnel} className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group">
                     <Square className="w-4 h-4 fill-current group-active:scale-95 transition-transform" />
-                    Shutdown Server
+                    Shutdown Server & Tunnel
                   </button>
                 ) : (
-                  <button onClick={startMcp} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 glow-primary group active:translate-y-0.5">
+                  <button onClick={startMcpAndTunnel} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 glow-primary group active:translate-y-0.5">
                     <Play className="w-4 h-4 fill-current" />
-                    Launch MCP Engine
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* FRP Card */}
-          <section className="glass-panel rounded-2xl overflow-hidden animate-in fade-in slide-in-from-left-8 duration-500">
-            <div className="p-4 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-pink-400" />
-                <h2 className="font-semibold text-sm uppercase tracking-wider opacity-80">Tunneling Bridge</h2>
-              </div>
-              <Server className="w-4 h-4 text-pink-400 opacity-50" />
-            </div>
-            
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-8 space-y-1.5">
-                  <label>Relay Server Address</label>
-                  <input 
-                    type="text" 
-                    value={frpServer}
-                    onChange={(e) => setFrpServer(e.target.value)}
-                    placeholder="vm.innosynth.dev"
-                    className="w-full text-sm"
-                  />
-                </div>
-                <div className="col-span-4 space-y-1.5">
-                  <label>Relay Port</label>
-                  <input 
-                    type="number" 
-                    value={frpPort}
-                    onChange={(e) => setFrpPort(e.target.value)}
-                    className="w-full text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label>Security Token</label>
-                <input 
-                  type="password" 
-                  value={frpToken}
-                  onChange={(e) => setFrpToken(e.target.value)}
-                  className="w-full text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label>Access Port</label>
-                  <input 
-                    type="number" 
-                    value={remotePort}
-                    onChange={(e) => setRemotePort(e.target.value)}
-                    className="w-full text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label>Custom Domain</label>
-                  <input 
-                    type="text" 
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="my-agent.frp.me"
-                    className="w-full text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                {frpcStatus === 'running' ? (
-                  <button onClick={stopFrpc} className="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group">
-                    <RefreshCw className="w-4 h-4 animate-spin-slow group-active:scale-95 transition-transform" />
-                    Disconnect Bridge
-                  </button>
-                ) : (
-                  <button onClick={startFrpc} className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 glow-secondary group active:translate-y-0.5">
-                    <Globe className="w-4 h-4" />
-                    Establish Tunnel
+                    Launch MCP Engine & Tunnel
                   </button>
                 )}
               </div>
