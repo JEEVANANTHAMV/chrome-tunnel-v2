@@ -48,15 +48,15 @@ declare global {
 
 export default function Dashboard() {
   const [modelProvider, setModelProvider] = useState('default');
-  const [modelName, setModelName] = useState('qwen3-max');
-  const [baseUrl, setBaseUrl] = useState('http://172.174.244.221:8001');
-  const [apiKey, setApiKey] = useState('any-key');
-  const [mcpPort, setMcpPort] = useState('3000');
+  const [modelName, setModelName] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [mcpPort, setMcpPort] = useState('4000');
   
   // Auto-generated FRP Tunnel Settings
   const HARDCODED_FRP_SERVER = '172.174.244.221';
   const HARDCODED_FRP_PORT = '7000';
-  const HARDCODED_FRP_TOKEN = 'mysecrettoken';
+  const HARDCODED_FRP_TOKEN = '48f8ef8d08aa5c4d9adab6b3b7f7b9df';
   const [publicUrl, setPublicUrl] = useState('');
   
   const [mcpStatus, setMcpStatus] = useState('stopped'); // stopped, running, error
@@ -103,13 +103,15 @@ export default function Dashboard() {
       return;
     }
     try {
-      const res = await window.electronAPI.startMcp({
+      const config = {
         modelProvider,
-        modelName,
-        baseUrl,
-        apiKey,
+        modelName: modelProvider === 'default' ? 'qwen3-max' : modelName,
+        baseUrl: modelProvider === 'default' ? 'http://localhost:8001/v1' : baseUrl,
+        apiKey: modelProvider === 'default' ? 'any-key' : apiKey,
         port: parseInt(mcpPort),
-      });
+      };
+
+      const res = await window.electronAPI.startMcp(config);
       
       let finalPort = mcpPort;
       if (res.success && res.port) {
@@ -164,7 +166,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-purple-500/30">
+    <div className="fixed inset-0 overflow-hidden flex flex-col bg-background text-foreground selection:bg-purple-500/30">
       {/* Navigation Header */}
       <header className="h-16 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-50 px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -202,7 +204,7 @@ export default function Dashboard() {
       )}
 
       {/* Connection Indicator Bar */}
-      <div className="px-6 py-3 bg-purple-500/5 border-b border-white/5 flex items-center justify-between mb-2">
+      <div className="flex-none px-6 py-3 bg-purple-500/5 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", mcpStatus === 'running' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-white/20')} />
@@ -213,9 +215,17 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", frpcStatus === 'running' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-white/20')} />
             <span className="text-xs font-medium opacity-60">Public:</span>
-            <span className="text-sm font-mono text-purple-400 font-bold">
-              {publicUrl ? publicUrl : 'Tunnel not configured'}
-            </span>
+            <div className="flex items-center gap-2 group/url cursor-pointer" onClick={() => {
+              if (publicUrl) {
+                navigator.clipboard.writeText(publicUrl);
+                addLog('FRP', 'Public URL copied to clipboard!');
+              }
+            }}>
+              <span className="text-sm font-mono text-purple-400 font-bold hover:text-purple-300 transition-colors">
+                {publicUrl ? publicUrl : 'Tunnel not configured'}
+              </span>
+              {publicUrl && <RefreshCw className="w-3 h-3 text-purple-400/50 group-hover/url:text-purple-400 transition-colors" />}
+            </div>
           </div>
         </div>
         <div className="text-[10px] text-white/30 font-medium">
@@ -223,10 +233,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="flex-1 p-6 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
+      <main className="flex-1 p-6 grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full overflow-hidden items-stretch">
         
         {/* Left Column: Config */}
-        <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
+        <div className="col-span-12 lg:col-span-5 flex flex-col gap-6 overflow-y-auto pr-2 scrollbar-thin">
           
           {/* MCP Card */}
           <section className="glass-panel rounded-2xl overflow-hidden animate-in fade-in slide-in-from-left-4 duration-500">
@@ -265,43 +275,47 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label>Model Identifier</label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="e.g. gpt-4o, qwen3-max"
-                    className="w-full pl-3 text-sm"
-                  />
-                </div>
-              </div>
+              {modelProvider !== 'default' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label>Model Identifier</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        value={modelName}
+                        onChange={(e) => setModelName(e.target.value)}
+                        placeholder="e.g. gpt-4o, qwen3-max"
+                        className="w-full pl-3 text-sm"
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-1.5">
-                <label>Endpoint URL (Optional)</label>
-                <input 
-                  type="text" 
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="https://api.openai.com/v1"
-                  className="w-full text-sm"
-                />
-              </div>
+                  <div className="space-y-1.5">
+                    <label>Endpoint URL (Optional)</label>
+                    <input 
+                      type="text" 
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="https://api.openai.com/v1"
+                      className="w-full text-sm"
+                    />
+                  </div>
 
-              <div className="space-y-1.5">
-                <label>API Auth Token</label>
-                <div className="relative group">
-                  <input 
-                    type="password" 
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="••••••••••••••••"
-                    className="w-full text-sm pr-10"
-                  />
-                  <Shield className="absolute right-3 top-2.5 w-4 h-4 text-white/20 group-hover:text-purple-400 transition-colors" />
-                </div>
-              </div>
+                  <div className="space-y-1.5">
+                    <label>API Auth Token</label>
+                    <div className="relative group">
+                      <input 
+                        type="password" 
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="••••••••••••••••"
+                        className="w-full text-sm pr-10"
+                      />
+                      <Shield className="absolute right-3 top-2.5 w-4 h-4 text-white/20 group-hover:text-purple-400 transition-colors" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="pt-2">
                 {mcpStatus === 'running' ? (
@@ -321,8 +335,8 @@ export default function Dashboard() {
         </div>
 
         {/* Right Column: Logs */}
-        <div className="col-span-12 lg:col-span-7 h-[calc(100vh-10rem)] flex flex-col animate-in fade-in slide-in-from-right-4 duration-500">
-          <section className="glass-panel flex-1 rounded-2xl flex flex-col overflow-hidden">
+        <div className="col-span-12 lg:col-span-7 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+          <section className="glass-panel flex-1 rounded-2xl flex flex-col overflow-hidden h-full">
             <div className="p-4 border-b border-white/5 bg-black/40 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Terminal className="w-5 h-5 text-green-400" />
@@ -338,7 +352,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex-1 bg-black/60 p-5 font-mono text-[13px] overflow-y-auto overflow-x-hidden leading-relaxed scrollbar-thin">
+            <div className="flex-1 bg-black/60 p-5 font-mono text-[13px] overflow-y-auto overflow-x-hidden leading-relaxed scrollbar-thin select-text" style={{ userSelect: 'text', WebkitUserSelect: 'text' }}>
               {logs.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full opacity-20 pointer-events-none">
                   <Terminal className="w-12 h-12 mb-2" />

@@ -42,4 +42,20 @@ if (!fs.existsSync(neutralinoJsPath)) {
   }
 }
 
+// Ensure Next.js dev server has access to these files
+const publicDir = path.join(__dirname, '..', 'frontend', 'public');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
+
+const publicJsDir = path.join(publicDir, 'js');
+if (!fs.existsSync(publicJsDir)) fs.mkdirSync(publicJsDir, { recursive: true });
+
+if (fs.existsSync(preloadDest)) {
+  fs.copyFileSync(preloadDest, path.join(publicDir, 'preload.js'));
+  console.log('Copied preload.js to frontend/public');
+}
+if (fs.existsSync(neutralinoJsPath)) {
+  fs.copyFileSync(neutralinoJsPath, path.join(publicJsDir, 'neutralino.js'));
+  console.log('Copied neutralino.js to frontend/public/js');
+}
+
 console.log('Resources setup complete');

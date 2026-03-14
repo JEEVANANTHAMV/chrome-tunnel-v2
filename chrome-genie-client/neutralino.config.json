@@ -34,12 +34,12 @@
       "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/assets/icon.png",
-      "enableInspector": true,
+      "enableInspector": false,
       "borderless": false,
       "maximize": false,
       "hidden": false,
       "resizable": true,
-      "exitProcessOnClose": false,
+      "exitProcessOnClose": true,
       "preloadScript": "/resources/preload.js"
     }
   },
