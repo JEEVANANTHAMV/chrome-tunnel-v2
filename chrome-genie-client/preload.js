@@ -1,10 +1,33 @@
-const { contextBridge, ipcRenderer } = require('electron');
+// Neutralinojs Preload Script
+// This script runs before the page loads and sets up the bridge between the renderer and main process
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  startMcp: (config) => ipcRenderer.invoke('start-mcp', config),
-  stopMcp: () => ipcRenderer.invoke('stop-mcp'),
-  startFrpc: (config) => ipcRenderer.invoke('start-frpc', config),
-  stopFrpc: () => ipcRenderer.invoke('stop-frpc'),
-  onMcpLog: (callback) => ipcRenderer.on('mcp-log', (_event, value) => callback(value)),
-  onFrpcLog: (callback) => ipcRenderer.on('frpc-log', (_event, value) => callback(value)),
-});
+// Expose the ChromeGenie API to the window object
+window.chromeGenie = {
+  startMcp: (config) => {
+    return neu.extensions.chromegenie.startMcp(config);
+  },
+  stopMcp: () => {
+    return neu.extensions.chromegenie.stopMcp();
+  },
+  startFrpc: (config) => {
+    return neu.extensions.chromegenie.startFrpc(config);
+  },
+  stopFrpc: () => {
+    return neu.extensions.chromegenie.stopFrpc();
+  },
+  onMcpLog: (callback) => {
+    neu.Event.on('mcp-log', (event) => {
+      callback(event.detail);
+    });
+  },
+  onFrpcLog: (callback) => {
+    neu.Event.on('frpc-log', (event) => {
+      callback(event.detail);
+    });
+  }
+};
+
+// Also expose as electronAPI for backward compatibility during migration
+window.electronAPI = window.chromeGenie;
+
+console.log('ChromeGenie API loaded successfully');

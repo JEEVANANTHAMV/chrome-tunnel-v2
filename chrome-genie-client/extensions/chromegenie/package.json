@@ -1,0 +1,12 @@
+{
+  "name": "chromegenie",
+  "version": "1.0.0",
+  "description": "ChromeGenie extension for MCP and FRP control",
+  "main": "index.js",
+  "functions": [
+    "startMcp",
+    "stopMcp",
+    "startFrpc",
+    "stopFrpc"
+  ]
+}

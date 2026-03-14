@@ -1,5 +1,5 @@
-// Neutralinojs Main Process Script
-// This script runs in the main process and handles native operations
+// ChromeGenie Extension for Neutralinojs
+// This extension provides MCP and FRP control functionality
 
 const { spawn } = require('child_process');
 const path = require('path');
@@ -17,26 +17,8 @@ function getBasePath() {
     return process.cwd();
   } else {
     // In production, use the Neutralino resources path
-    return process.resourcesPath || path.join(__dirname, '..');
+    return process.resourcesPath || path.join(__dirname, '..', '..');
   }
-}
-
-// Get the path to the frontend
-function getFrontendPath() {
-  if (isDev) {
-    return 'http://localhost:3000';
-  } else {
-    // Serve from the bundled resources
-    const basePath = getBasePath();
-    return path.join(basePath, 'frontend', 'out', 'index.html');
-  }
-}
-
-// Initialize the application
-function init() {
-  console.log('ChromeGenie Client initialized');
-  console.log('Mode:', isDev ? 'Development' : 'Production');
-  console.log('Base Path:', getBasePath());
 }
 
 // Start MCP server
@@ -65,15 +47,15 @@ async function startMcp(config) {
   mcpProcess.stdout.on('data', (data) => {
     console.log(`MCP STDOUT: ${data}`);
     // Emit event to renderer
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('mcp-log', data.toString());
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('mcp-log', data.toString());
     }
   });
 
   mcpProcess.stderr.on('data', (data) => {
     console.error(`MCP STDERR: ${data}`);
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('mcp-log', `ERROR: ${data.toString()}`);
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('mcp-log', `ERROR: ${data.toString()}`);
     }
   });
 
@@ -152,8 +134,8 @@ ${customDomain ? `custom_domains = ${customDomain}` : `remote_port = ${remotePor
   // Check if frpc exists
   if (!fs.existsSync(frpcPath)) {
     console.error(`frpc binary not found at: ${frpcPath}`);
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('frpc-log', `ERROR: frpc binary not found at ${frpcPath}\n`);
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('frpc-log', `ERROR: frpc binary not found at ${frpcPath}\n`);
     }
     return { success: false, error: 'frpc binary not found' };
   }
@@ -172,21 +154,21 @@ ${customDomain ? `custom_domains = ${customDomain}` : `remote_port = ${remotePor
   });
 
   frpcProcess.stdout.on('data', (data) => {
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('frpc-log', data.toString());
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('frpc-log', data.toString());
     }
   });
 
   frpcProcess.stderr.on('data', (data) => {
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('frpc-log', `ERROR: ${data.toString()}`);
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('frpc-log', `ERROR: ${data.toString()}`);
     }
   });
 
   frpcProcess.on('error', (err) => {
     console.error('Failed to start frpc:', err);
-    if (typeof Neutralino !== 'undefined' && Neutralino.Event) {
-      Neutralino.Event.emit('frpc-log', `ERROR: Failed to start frpc - ${err.message}\n`);
+    if (typeof neu !== 'undefined' && neu.Event) {
+      neu.Event.emit('frpc-log', `ERROR: Failed to start frpc - ${err.message}\n`);
     }
   });
 
@@ -202,13 +184,7 @@ async function stopFrpc() {
   return { success: true };
 }
 
-// Initialize on startup
-init();
-
-// Log the frontend path for debugging
-console.log('Frontend will be loaded from:', getFrontendPath());
-
-// Export functions for use in the extension system
+// Export functions for the extension
 module.exports = {
   startMcp,
   stopMcp,

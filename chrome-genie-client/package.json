@@ -5,15 +5,13 @@
   "homepage": "https://github.com/innosynth/chrome-genie-client#readme",
   "main": "main.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:electron\"",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:neu\"",
     "dev:frontend": "cd frontend && npm run dev",
-    "dev:electron": "wait-on http://localhost:3000 && electron . --no-sandbox",
-    "start:prod": "npm run build:frontend && ELECTRON_IS_DEV=0 electron . --no-sandbox",
-    "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:frontend && npx electron-builder",
-    "build:win": "npm run build:frontend && npx electron-builder --win",
-    "build:mac": "npm run build:frontend && npx electron-builder --mac",
-    "build:linux": "npm run build:frontend && npx electron-builder --linux",
+    "dev:neu": "wait-on http://localhost:3000 && npx @neutralinojs/neu run",
+    "start:prod": "npm run build:frontend && npx @neutralinojs/neu run",
+    "build:frontend": "cd frontend && npm run build && cd .. && cp -r frontend/out/* resources/ && rm -rf frontend/out",
+    "build": "npm run build:frontend && npx @neutralinojs/neu build --release --clean",
+    "build:embed": "npm run build:frontend && npx @neutralinojs/neu build --release --clean --embed-resources",
     "download:frp": "node scripts/download-frp-binaries.js",
     "postinstall": "cd frontend && npm install",
     "setup:frp": "node scripts/setup-frp.js"
@@ -28,15 +26,11 @@
   "devDependencies": {
     "adm-zip": "^0.5.10",
     "concurrently": "^8.2.2",
-    "electron": "^29.0.0",
-    "electron-builder": "^26.8.1",
     "tar": "^6.2.0",
     "wait-on": "^7.2.0"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "electron-is-dev": "^2.0.0",
-    "electron-serve": "^3.0.1",
     "shelljs": "^0.8.5"
   }
 }

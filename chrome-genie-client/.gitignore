@@ -3,12 +3,6 @@ node_modules/
 frontend/node_modules/
 
 # Build outputs
-# dist/
-dist/*-unpacked/
-dist/win-unpacked/
-dist/linux-unpacked/
-dist/mac/
-dist/mac-arm64/
 out/
 frontend/out/
 frontend/.next/
@@ -16,13 +10,11 @@ frontend/.next/
 # OS files
 .DS_Store
 Thumbs.db
-*.pak
-*.so
-*.bin
 
 # Logs
 *.log
 npm-debug.log*
+neutralinojs.log
 
 # Environment files
 .env
@@ -39,13 +31,34 @@ npm-debug.log*
 temp-frp/
 *.tmp
 *.temp
+.tmp/
 
-# Electron builder cache
-.electron-builder/
-
-# Iconset (intermediate file)
-*.iconset/
+# Neutralinojs binaries (downloaded by CLI)
+bin/neutralino-*
+neutralinojs/
 
 # Build artifacts
-builder-debug.yml
-builder-effective-config.yaml
+*.neu
+*.zip
+!*.config.json
+
+# Frontend build
+frontend/.next/
+frontend/out/
+
+# Resources (frontend build output - only keep icons and neutralino.js)
+resources/
+!resources/icons/
+!resources/js/neutralino.js
+
+# Extension build artifacts
+extensions/**/*.neu
+
+# Auth info (generated at runtime)
+.tmp/auth_info.json
+
+# FRP binaries (large files, download via script)
+bin/frp_*
+bin/frpc
+bin/frpc-*
+bin/frpc.exe
