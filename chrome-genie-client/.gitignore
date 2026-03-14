@@ -41,6 +41,7 @@ neutralinojs/
 *.neu
 *.zip
 !*.config.json
+!dist/release/*.zip
 
 # Frontend build
 frontend/.next/
