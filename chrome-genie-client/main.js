@@ -3,6 +3,9 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const serve = require('electron-serve');
+
+const loadURL = serve({ directory: 'frontend/out' });
 
 let mainWindow;
 let mcpProcess = null;
@@ -20,14 +23,11 @@ function createWindow() {
     title: "ChromeGenie Dashboard",
   });
 
-  const url = isDev
-    ? 'http://localhost:3000'
-    : `file://${path.join(__dirname, 'frontend/out/index.html')}`;
-
-  mainWindow.loadURL(url);
-
   if (isDev) {
+    mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
+  } else {
+    loadURL(mainWindow);
   }
 }
 
