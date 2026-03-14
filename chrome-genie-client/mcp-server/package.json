@@ -1,0 +1,9 @@
+{
+  "name": "chrome-genie-mcp-bundle",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "innosynth-mcp": "latest",
+    "sharp": "^0.34.5"
+  }
+}
