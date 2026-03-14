@@ -3,9 +3,15 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const serve = require('electron-serve');
+let loadURL;
 
-const loadURL = serve({ directory: 'frontend/out' });
+async function setupServe() {
+  if (!isDev) {
+    const serveModule = await import('electron-serve');
+    const serve = serveModule.default || serveModule;
+    loadURL = serve({ directory: 'frontend/out' });
+  }
+}
 
 let mainWindow;
 let mcpProcess = null;
@@ -31,17 +37,21 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+(async () => {
+  await setupServe();
+  await app.whenReady();
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+})();
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
   }
 });
 
