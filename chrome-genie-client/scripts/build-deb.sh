@@ -23,7 +23,7 @@ cp -r ${DIST_DIR}/resources.neu ${DEB_DIR}/usr/bin/
 cp -r ${DIST_DIR}/extensions ${DEB_DIR}/usr/bin/
 
 # Copy icon
-cp resources/icons/icon.png ${DEB_DIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png
+cp resources/assets/icon_512.png ${DEB_DIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png
 
 # Create desktop file
 cat > ${DEB_DIR}/usr/share/applications/${APP_NAME}.desktop << EOF
@@ -54,12 +54,16 @@ EOF
 chmod +x ${DEB_DIR}/DEBIAN/postinst
 
 # Build the .deb package using dpkg-deb
-echo "Building .deb package..."
-cd ${DEB_DIR}
-dpkg-deb --build . ../dist/${DEB_PACKAGE}
-cd ..
-
-echo "Created: dist/${DEB_PACKAGE}"
+if command -v dpkg-deb &> /dev/null; then
+    echo "Building .deb package..."
+    cd ${DEB_DIR}
+    dpkg-deb --build . ../dist/${DEB_PACKAGE}
+    cd ..
+    echo "Created: dist/${DEB_PACKAGE}"
+else
+    echo "Warning: dpkg-deb not found. Skipping .deb package creation."
+    echo "To build .deb on macOS, install with: brew install dpkg"
+fi
 
 # Cleanup
 rm -rf ${DEB_DIR}

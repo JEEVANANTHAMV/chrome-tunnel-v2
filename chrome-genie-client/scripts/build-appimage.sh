@@ -9,10 +9,16 @@ DIST_DIR="dist/chrome-genie-client"
 APPDIR="AppDir"
 APPIMAGE="${APP_NAME}-${APP_VERSION}.AppImage"
 
+# Check if running on Linux
+if [ "$(uname)" != "Linux" ]; then
+    echo "Warning: AppImage can only be built on Linux. Skipping."
+    exit 0
+fi
+
 # Check if appimagetool is installed
 if [ ! -f appimagetool ]; then
     echo "Downloading appimagetool..."
-    wget -O appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+    curl -L -o appimagetool https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
     chmod +x appimagetool
 fi
 
@@ -30,8 +36,8 @@ cp -r ${DIST_DIR}/resources.neu ${APPDIR}/usr/bin/
 cp -r ${DIST_DIR}/extensions ${APPDIR}/usr/bin/
 
 # Copy icon to multiple locations
-cp resources/icons/icon.png ${APPDIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png
-cp resources/icons/icon.png ${APPDIR}/${APP_NAME}.png
+cp resources/assets/icon_512.png ${APPDIR}/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png
+cp resources/assets/icon_512.png ${APPDIR}/${APP_NAME}.png
 
 # Create desktop file
 cat > ${APPDIR}/${APP_NAME}.desktop << EOF

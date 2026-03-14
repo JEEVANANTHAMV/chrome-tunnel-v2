@@ -22,7 +22,7 @@ cp -r ${DIST_DIR}/resources.neu ${APP_BUNDLE}/Contents/MacOS/
 cp -r ${DIST_DIR}/extensions ${APP_BUNDLE}/Contents/MacOS/
 
 # Copy icon
-cp assets/icon.icns ${APP_BUNDLE}/Contents/Resources/
+cp resources/assets/icon.icns ${APP_BUNDLE}/Contents/Resources/
 
 # Create Info.plist
 cat > ${APP_BUNDLE}/Contents/Info.plist << EOF

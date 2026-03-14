@@ -25,7 +25,7 @@ cp -r ${DIST_DIR}/resources.neu ${APP_BUNDLE}/Contents/MacOS/
 cp -r ${DIST_DIR}/extensions ${APP_BUNDLE}/Contents/MacOS/
 
 # Copy icon
-cp assets/icon.icns ${APP_BUNDLE}/Contents/Resources/
+cp resources/assets/icon.icns ${APP_BUNDLE}/Contents/Resources/
 
 # Create Info.plist
 cat > ${APP_BUNDLE}/Contents/Info.plist << EOF
@@ -74,7 +74,7 @@ app_name = "ChromeGenie"
 app_version = "1.0.0"
 files = ["ChromeGenie.app"]
 symlinks = {"Applications": "/Applications"}
-icon = "assets/icon.icns"
+icon = "resources/assets/icon.icns"
 EOF
     
     dmgbuild -s dmg-settings.py "dist/${DMG_FILE}" "${APP_BUNDLE}"
